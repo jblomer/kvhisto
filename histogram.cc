@@ -4,19 +4,32 @@
 #include <cstdio>
 
 int main() {
-  Histogram<float, uint32_t> h;
+  //std::array<int, 1> a0{ 1 };
+  //for (auto i : a0) {
+  //  printf("%d\n", i);
+  //}
+
+  std::array<int, 3> a1{ {1,2} };
+  for (auto i : a1) {
+    printf("%d\n", i);
+  }
+
+  //HistogramBase<float, uint32_t, ChannelStoreSimple<uint32_t>, 2 > h;
+  //h.Fill({{5}});
+
+  /*HistogramBase< float, uint32_t, ChannelStoreSimple<float> > h;
   h.SetDimensions(1);
   std::vector<float> bins;
   for (unsigned i = 0; i <= 10000; ++i) {
     bins.push_back(i);
   }
   //h.SetBinning(1, Histogram<float, uint32_t>::Binning(bins));
-  h.SetBinning(1, Histogram<float, uint32_t>::Binning(0, 1, 10000));
+  h.SetBinning(1, HistogramBase< float, uint32_t, ChannelStoreSimple<float> >::Binning(0, 1, 10000));
   for (unsigned j = 0; j < 10000; ++j) {
     for (unsigned i = 0; i < 10000; ++i) {
       h.Fill(i);
     }
-  }
+  }*/
 
   /*Histogram<float>::BinningFixed b1(0.0, 1.0, 10.0);
   printf("0.0: %d\n", b1.FindBin(0.0));
