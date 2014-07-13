@@ -13,6 +13,7 @@
 
 #include "binning.h"
 #include "channel.h"
+#include "coord.h"
 
 template <
    typename       BorderT,
@@ -59,10 +60,10 @@ class HistogramBase {
     return indexes;
   }
 
-  void Fill(const std::array<BorderT, DimensionV> &point) {
+  void Fill(const Coordinate<BorderT, DimensionV> &coord) {
     std::array<uint64_t, DimensionV> indexes;
     for (decltype(DimensionV) i = 0; i < DimensionV; ++i) {
-      indexes[i] = binnings_[i].FindBin(point[i]);
+      indexes[i] = binnings_[i].FindBin(coord.values[i]);
     }
     uint64_t channel = Indexes2Channel(indexes);
     channels_->Add(channel, 1);
