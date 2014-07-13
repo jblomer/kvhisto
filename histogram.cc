@@ -14,7 +14,7 @@ int main() {
   Histogram<float, uint32_t, ChannelStoreSimple<uint32_t>, 1 > h({{bins}});
   for (unsigned j = 0; j < 10000; ++j) {
     for (unsigned i = 0; i < 100000; ++i) {
-      h.Fill({{static_cast<float>(i)}});
+      //h.Fill({{static_cast<float>(i)}});
       h.Fill(i);
     }
   }
