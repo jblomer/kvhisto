@@ -9,7 +9,6 @@
 template <typename ChannelT, class DerivedT>
 class ChannelStoreBase {
  public:
-  ChannelStoreBase(const uint64_t num) { }
   void Add(const uint64_t index, const ChannelT value) {
     static_cast<DerivedT *>(this)->AddImpl(index, value);
   }
@@ -25,7 +24,8 @@ class ChannelStoreSimple :
 {
   friend class ChannelStoreBase< ChannelT, ChannelStoreSimple<ChannelT> >;
  public:
-  ChannelStoreSimple(const uint64_t num) : bins_(num, 0) { };
+  ChannelStoreSimple(const uint64_t total_bins) : bins_(total_bins, 0) { };
+  uint64_t total_bins() const { return bins_.size(); }
  protected:
   void AddImpl(const uint64_t index, const ChannelT value) {
     bins_[index] += value;

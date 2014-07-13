@@ -14,7 +14,9 @@ int main() {
     printf("%d\n", i);
   }
 
-  //HistogramBase<float, uint32_t, ChannelStoreSimple<uint32_t>, 2 > h;
+  Binning<float> bins(1, 1, 3);
+
+  Histogram<float, uint32_t, ChannelStoreSimple<uint32_t>, 1 >({{bins}});
   //h.Fill({{5}});
 
   /*HistogramBase< float, uint32_t, ChannelStoreSimple<float> > h;
