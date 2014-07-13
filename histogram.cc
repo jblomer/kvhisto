@@ -9,15 +9,14 @@ int main() {
   //  printf("%d\n", i);
   //}
 
-  std::array<int, 3> a1{ {1,2} };
-  for (auto i : a1) {
-    printf("%d\n", i);
+  Binning<float> bins(1, 1, 100000);
+
+  Histogram<float, uint32_t, ChannelStoreSimple<uint32_t>, 1 > h({{bins}});
+  for (unsigned j = 0; j < 10000; ++j) {
+    for (unsigned i = 0; i < 100000; ++i) {
+      h.Fill({{static_cast<float>(i)}});
+    }
   }
-
-  Binning<float> bins(1, 1, 3);
-
-  Histogram<float, uint32_t, ChannelStoreSimple<uint32_t>, 1 >({{bins}});
-  //h.Fill({{5}});
 
   /*HistogramBase< float, uint32_t, ChannelStoreSimple<float> > h;
   h.SetDimensions(1);

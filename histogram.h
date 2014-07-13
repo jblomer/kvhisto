@@ -29,7 +29,7 @@ class HistogramBase {
     : binnings_(binnings)
   {
     uint64_t total_bins = 1;
-    for (auto i : binnings_) {
+    for (decltype(DimensionV) i = 0; i < DimensionV; ++i) {
       num_bins_[i] = binnings_[i].num_bins();
       total_bins *= num_bins_[i];
     }
@@ -42,7 +42,7 @@ class HistogramBase {
   {
     uint64_t result = 0;
     uint64_t factor = 1;
-    for (auto i : indexes) {
+    for (decltype(DimensionV) i = 0; i < DimensionV; ++i) {
       result += factor * indexes[i];
       factor *= num_bins_[i];
     }
@@ -52,7 +52,7 @@ class HistogramBase {
     const
   {
     std::array<uint64_t, DimensionV> indexes;
-    for (auto i : indexes) {
+    for (decltype(DimensionV) i = 0; i < DimensionV; ++i) {
       indexes[i] = channel % num_bins_[i];
       channel /= num_bins_[i];
     }
@@ -61,7 +61,7 @@ class HistogramBase {
 
   void Fill(const std::array<BorderT, DimensionV> &point) {
     std::array<uint64_t, DimensionV> indexes;
-    for (auto i : indexes) {
+    for (decltype(DimensionV) i = 0; i < DimensionV; ++i) {
       indexes[i] = binnings_[i].FindBin(point[i]);
     }
     uint64_t channel = Indexes2Channel(indexes);
