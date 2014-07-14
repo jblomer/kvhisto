@@ -15,6 +15,12 @@
 #include "channel.h"
 #include "coord.h"
 
+// Always allow weighted fill
+// RMS?
+// Check for overflow for char, short
+// Automatic bin extension
+// average histograms
+
 template <
    typename       BorderT,
    typename       ChannelT,
@@ -67,7 +73,7 @@ class HistogramBase {
     }
     uint64_t channel = Indexes2Channel(indexes);
     channels_->Add(channel, 1);
-    static_cast<DerivedT *>(this)->AddQsum(channel, 1);
+    static_cast<DerivedT *>(this)->AddMore(channel, 1);
   }
 
  private:
@@ -103,7 +109,7 @@ class Histogram :
   explicit Histogram(const std::array<Binning<BorderT>, DimensionV> &binnings)
     : FatherT(binnings) { }
  protected:
-  void AddQsum(const uint64_t channel, const ChannelT value) { }
+  void AddMore(const uint64_t channel, const ChannelT value) { }
 };
 
 
@@ -113,22 +119,56 @@ template <
    class          ChannelStoreT,
    const uint16_t DimensionV
 >
-class HistogramWeighted :
+class HistogramQsums :
   public HistogramBase<
     BorderT,
     ChannelT,
     ChannelStoreT,
     DimensionV,
-    Histogram<BorderT, ChannelT, ChannelStoreT, DimensionV>
+    HistogramQsums<BorderT, ChannelT, ChannelStoreT, DimensionV>
   >
 {
-  friend class Histogram<BorderT, ChannelT, ChannelStoreT, DimensionV>;
+  friend class HistogramBase<BorderT, ChannelT, ChannelStoreT, DimensionV,
+    HistogramQsums<BorderT, ChannelT, ChannelStoreT, DimensionV>>;
  protected:
-  void AddQsum(const uint64_t channel, const ChannelT value) {
+  void AddMore(const uint64_t channel, const ChannelT value) {
     qsums_->Add(channel, value*value);
   }
  private:
   std::unique_ptr< ChannelStoreBase<ChannelT, ChannelStoreT> > qsums_;
+};
+
+
+template <
+   typename       BorderT,
+   typename       ChannelT,
+   class          ChannelStoreT,
+   const uint16_t DimensionV
+>
+class HistogramProfile :
+  public HistogramBase<
+    BorderT,
+    ChannelT,
+    ChannelStoreT,
+    DimensionV,
+    HistogramProfile<BorderT, ChannelT, ChannelStoreT, DimensionV>
+  >
+{
+  friend class HistogramBase<
+      BorderT,
+      ChannelT,
+      ChannelStoreT,
+      DimensionV,
+      HistogramProfile<BorderT, ChannelT, ChannelStoreT, DimensionV>
+    >;
+ protected:
+  void AddMore(const uint64_t channel, const ChannelT value) {
+    // TODO
+  }
+ private:
+  std::unique_ptr< ChannelStoreBase<ChannelT, ChannelStoreT> > qsums_;
+  std::unique_ptr< ChannelStoreBase<ChannelT, ChannelStoreT> > qsumsmeans_;
+  std::unique_ptr< ChannelStoreBase<ChannelT, ChannelStoreT> > means_;
 };
 
 #endif

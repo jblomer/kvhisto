@@ -9,9 +9,14 @@ int main() {
   //  printf("%d\n", i);
   //}
 
-  Binning<float> bins(1, 1, 100);
+  Binning<double> b1(1, 1, 100);
+  Binning<double> b2(1, 1, 100);
+  Histogram<double, uint32_t, ChannelStoreSimple<uint32_t>, 2 > h2({{b1, b2}});
+  //h2.Fill(1, 1);
 
-  Histogram<float, uint32_t, ChannelStoreSimple<uint32_t>, 1 > h({{bins}});
+  Binning<double> bins(1, 1, 100);
+
+  Histogram<double, uint32_t, ChannelStoreSimple<uint32_t>, 1 > h({{bins}});
   for (unsigned j = 0; j < 10000000; ++j) {
     for (unsigned i = 0; i < 100; ++i) {
       //h.Fill({{static_cast<float>(i)}});
