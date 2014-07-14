@@ -167,6 +167,8 @@ class HistogramProfile :
   }
  private:
   std::unique_ptr< ChannelStoreBase<ChannelT, ChannelStoreT> > qsums_;
+  
+  // TODO: replace by num_fills
   std::unique_ptr< ChannelStoreBase<ChannelT, ChannelStoreT> > qsumsmeans_;
   std::unique_ptr< ChannelStoreBase<ChannelT, ChannelStoreT> > means_;
 };
