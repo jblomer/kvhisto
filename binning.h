@@ -57,7 +57,7 @@ class Binning {
 
    uint64_t num_bins() const { return max_bin_ + 1; }
  private:
-  static const uint8_t kSteps = 16;
+  static const uint8_t kSteps = 8;
 
   std::vector<BorderT> borders_;
   BorderT min_;

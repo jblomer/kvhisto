@@ -9,20 +9,26 @@ int main() {
   //  printf("%d\n", i);
   //}
 
-  Binning<double> b1(1, 1, 100);
-  Binning<double> b2(1, 1, 100);
-  Histogram<double, uint32_t, ChannelStoreSimple<uint32_t>, 2 > h2({{b1, b2}});
+  //Binning<double> b1(1, 1, 100);
+  //Binning<double> b2(1, 1, 100);
+  //Histogram<double, uint32_t, ChannelStoreSimple<uint32_t>, 2 > h2({{b1, b2}});
   //h2.Fill(1, 1);
 
-  Binning<double> bins(1, 1, 100);
 
-  Histogram<double, uint32_t, ChannelStoreSimple<uint32_t>, 1 > h({{bins}});
-  for (unsigned j = 0; j < 10000000; ++j) {
-    for (unsigned i = 0; i < 100; ++i) {
+  //Binning<double> bins(1, 1, 100000);
+  std::vector<double> borders;
+  borders.reserve(100000);
+  for (unsigned i = 0; i < 100000; ++i)
+    borders.push_back(i);
+  Binning<double> bins(borders);
+
+  /*Histogram<double, float, ChannelStoreSimple<float>, 1 > h({{bins}});
+  for (unsigned j = 0; j < 1000; ++j) {
+    for (unsigned i = 0; i < 100000; ++i) {
       //h.Fill({{static_cast<float>(i)}});
       h.Fill(i);
     }
-  }
+  }*/
 
   /*HistogramBase< float, uint32_t, ChannelStoreSimple<float> > h;
   h.SetDimensions(1);
@@ -75,4 +81,3 @@ int main() {
 
   return 0;
 }
-

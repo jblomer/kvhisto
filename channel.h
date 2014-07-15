@@ -15,6 +15,12 @@ class ChannelStoreBase {
   ChannelT Get(const uint64_t index) const {
     return static_cast<DerivedT *>(this)->GetImpl(index);
   }
+  uint64_t Occupied() const {
+    return static_cast<const DerivedT *>(this)->Occupied();
+  }
+  uint64_t Sum() const {
+    return static_cast<const DerivedT *>(this)->Sum();
+  }
 };
 
 
@@ -32,6 +38,20 @@ class ChannelStoreSimple :
   }
   ChannelT GetImpl(const uint64_t index) {
     return bins_[index];
+  }
+  uint64_t Occupied() const {
+    uint64_t occupied = 0;
+    for (auto i : bins_) {
+      if (i > 0) occupied++;
+    }
+    return occupied; 
+  }
+  uint64_t Sum() const {
+    uint64_t sum = 0;
+    for (auto i : bins_) {
+      sum += i;
+    }
+    return sum; 
   }
  private:
   std::vector<ChannelT> bins_;
