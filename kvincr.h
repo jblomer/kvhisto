@@ -13,12 +13,12 @@ typedef bool int;
 
 typedef void KV_CONNECTION;
 
-KV_CONNECTION *Connect(const char *locator);
+KV_CONNECTION *KvConnect(const char *locator);
 bool KvIncrInt(KV_CONNECTION *conn, const char *hist_name, uint32_t num_adds,
                uint64_t *bins, uint64_t *values[]);
 bool KvIncrFloat(KV_CONNECTION *conn, const char *hist_name, uint32_t num_adds,
                  uint64_t *bins, uint64_t *values[]);               
-void Disconnect(KV_CONNECTION *conn);
+void KvDisconnect(KV_CONNECTION *conn);
 
 
 #ifdef __cplusplus

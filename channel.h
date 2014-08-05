@@ -99,9 +99,19 @@ class ChannelStoreKvStore :
 {
   friend class ChannelStoreBase< ChannelT, ChannelStoreKvStore<ChannelT> >;
  public:
-  ChannelStoreKvStore(const uint64_t num) { };
+  ChannelStoreKvStore(const uint64_t num) : conn_(NULL) { };
+  ~ChannelStoreKvStore() {
+    KvDisconnect(conn_);
+  }
+  
+  bool Connect(const std::string &locator) { 
+    conn_ = KvConnect(locator.c_str());
+    return conn_ != NULL;
+  }
   void SetName(const std::string &name) { name_ = name; }
-  void Commit() { }
+  void Commit() {
+    
+  }
  protected:
   void AddImpl(const uint64_t index, const ChannelT value) {
     bins_[index] += value;
@@ -126,6 +136,7 @@ class ChannelStoreKvStore :
  private:
   std::unordered_map<uint64_t, ChannelT> bins_;
   std::string name_;
+  KV_CONNECTION *conn_;
 };
 
 #endif
