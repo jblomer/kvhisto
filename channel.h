@@ -5,6 +5,9 @@
 #include <inttypes.h>
 #include <math.h>
 #include <vector>
+#include <unordered_map>
+
+#include "kvincr.h"
 
 template <typename ChannelT, class DerivedT>
 class ChannelStoreBase {
@@ -18,7 +21,7 @@ class ChannelStoreBase {
   uint64_t Occupied() const {
     return static_cast<const DerivedT *>(this)->Occupied();
   }
-  uint64_t Sum() const {
+  ChannelT Sum() const {
     return static_cast<const DerivedT *>(this)->Sum();
   }
 };
@@ -46,8 +49,8 @@ class ChannelStoreSimple :
     }
     return occupied; 
   }
-  uint64_t Sum() const {
-    uint64_t sum = 0;
+  ChannelT Sum() const {
+    ChannelT sum{};
     for (auto i : bins_) {
       sum += i;
     }
@@ -62,15 +65,67 @@ template <typename ChannelT>
 class ChannelStoreSparse :
   public ChannelStoreBase< ChannelT, ChannelStoreSparse<ChannelT> >
 {
-  friend class ChannelStoreBase< ChannelT, ChannelStoreSimple<ChannelT> >;
+  friend class ChannelStoreBase< ChannelT, ChannelStoreSparse<ChannelT> >;
  public:
-  ChannelStoreSparse(const uint64_t num) : bins_(num, 0) { };
+  ChannelStoreSparse(const uint64_t num) { };
  protected:
   void AddImpl(const uint64_t index, const ChannelT value) {
     bins_[index] += value;
   }
+  ChannelT GetImpl(const uint64_t index) {
+    ChannelT result{};
+    auto iter = bins_.find(index);
+    if (iter != bins_.end())
+      result = iter->second;
+    return result;
+  }
+  uint64_t Occupied() const {
+    return bins_.size(); 
+  }
+  ChannelT Sum() const {
+    ChannelT sum{};
+    for (auto i : bins_) {
+      sum += i.second;
+    }
+    return sum; 
+  }
  private:
-  std::vector<ChannelT> bins_;
+  std::unordered_map<uint64_t, ChannelT> bins_;
+};
+
+template <typename ChannelT>
+class ChannelStoreKvStore :
+  public ChannelStoreBase< ChannelT, ChannelStoreKvStore<ChannelT> >
+{
+  friend class ChannelStoreBase< ChannelT, ChannelStoreKvStore<ChannelT> >;
+ public:
+  ChannelStoreKvStore(const uint64_t num) { };
+  void SetName(const std::string &name) { name_ = name; }
+  void Commit() { }
+ protected:
+  void AddImpl(const uint64_t index, const ChannelT value) {
+    bins_[index] += value;
+  }
+  ChannelT GetImpl(const uint64_t index) {
+    ChannelT result{};
+    auto iter = bins_.find(index);
+    if (iter != bins_.end())
+      result = iter->second;
+    return result;
+  }
+  uint64_t Occupied() const {
+    return bins_.size(); 
+  }
+  ChannelT Sum() const {
+    ChannelT sum{};
+    for (auto i : bins_) {
+      sum += i.second;
+    }
+    return sum; 
+  }
+ private:
+  std::unordered_map<uint64_t, ChannelT> bins_;
+  std::string name_;
 };
 
 #endif

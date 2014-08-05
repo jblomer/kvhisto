@@ -80,6 +80,8 @@ int main(int argc, char **argv) {
       unsigned dimension;
       sscanf(tokens[2].c_str(), "%u", &dimension);
       printf("new histo %s dimension %u\n", key.c_str(), dimension);
+      if (dimension < 4) continue;
+      //if ((dimension < 3) || (dimension > 3)) continue;
       
       vector<Binning<double>> binnings;
       unsigned token_pos = 3;

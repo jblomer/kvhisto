@@ -77,7 +77,7 @@ class HistogramBase {
   
   uint64_t size() const { return size_; }
   uint64_t occupied() const { return channels_->Occupied(); }
-  uint64_t sum() const { return channels_->Sum(); }
+  ChannelT sum() const { return channels_->Sum(); }
 
  private:
   uint16_t dimension_;

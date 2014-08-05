@@ -1,5 +1,6 @@
 
 #include "histogram.h"
+#include "prng.h"
 
 #include <cstdio>
 
@@ -21,6 +22,15 @@ int main() {
   for (unsigned i = 0; i < 100000; ++i)
     borders.push_back(i);
   Binning<double> bins(borders);
+  
+  Prng prng;
+  prng.InitSeed(42);
+  
+  Histogram<double, uint32_t, ChannelStoreSparse<uint32_t>> h({{bins}});
+  for (unsigned i = 0; i < 100000000; ++i)
+      h.Fill({prng.Next(100000) + 0.0});
+
+  printf("Occupied bins %llu, Histogram sum %u\n", h.occupied(), h.sum());
 
   /*Histogram<double, float, ChannelStoreSimple<float>, 1 > h({{bins}});
   for (unsigned j = 0; j < 1000; ++j) {
