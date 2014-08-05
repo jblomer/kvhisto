@@ -4,6 +4,7 @@
 
 #include <inttypes.h>
 #include <math.h>
+#include <memory>
 #include <vector>
 #include <algorithm>
 #include <array>
