@@ -2,6 +2,7 @@
 #include "histogram.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -53,7 +54,7 @@ vector<string> SplitString(const string &str,
 }
 
 struct HistoDescription {
-  HistoDescription() : dimension(0), h(nullptr) { }
+  HistoDescription() : dimension(0), h(NULL) { }
   HistoDescription(unsigned d, Histogram<double, uint32_t, ChannelStoreSimple<uint32_t>> *h) : dimension(d), h(h) { }
   unsigned dimension;
   Histogram<double, uint32_t, ChannelStoreSimple<uint32_t>> *h;
@@ -127,12 +128,12 @@ int main(int argc, char **argv) {
   }
   
   uint64_t filled_bins = 0;
-  for (auto i : histos) {
-    filled_bins += i.second.h->occupied();
+  for (auto i = histos.begin(); i != histos.end(); ++i) {
+    filled_bins += i->second.h->occupied();
   }
   uint64_t sum = 0;
-  for (auto i : histos) {
-    sum += i.second.h->sum();
+  for (auto i = histos.begin(); i != histos.end(); ++i) {
+    sum += i->second.h->sum();
   }
   
   printf("Replayed %lu histograms\n", histos.size());

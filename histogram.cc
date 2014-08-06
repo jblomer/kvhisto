@@ -3,6 +3,7 @@
 #include "prng.h"
 
 #include <cstdio>
+#include <unistd.h>
 
 int main() {
   //std::array<int, 1> a0{ 1 };
@@ -26,8 +27,14 @@ int main() {
   Prng prng;
   prng.InitSeed(42);
   
-  Histogram<double, uint32_t, ChannelStoreSparse<uint32_t>> h({bins});
-  for (unsigned i = 0; i < 100000000; ++i)
+  Histogram<double, uint32_t, ChannelStoreKvStore<uint32_t>> h({bins});
+  bool retval;
+  ChannelStoreKvStore<uint32_t> *channels = h.channels();
+  retval = channels->Connect("zk:localhost:2181", 1);
+  if (!retval)
+    abort();
+  
+  for (unsigned i = 0; i < 10000000; ++i)
       h.Fill({prng.Next(100000) + 0.0});
 
   printf("Occupied bins %lu, Histogram sum %u\n", h.occupied(), h.sum());

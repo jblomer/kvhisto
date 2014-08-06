@@ -44,14 +44,14 @@ class ChannelStoreSimple :
   }
   uint64_t Occupied() const {
     uint64_t occupied = 0;
-    for (auto i : bins_) {
+    for (auto i = bins_.begin(); i != bins_.end(); ++i) {
       if (i > 0) occupied++;
     }
     return occupied; 
   }
   ChannelT Sum() const {
     ChannelT sum{};
-    for (auto i : bins_) {
+    for (auto i = bins_.begin(); i != bins_.end(); ++i) {
       sum += i;
     }
     return sum; 
@@ -84,8 +84,8 @@ class ChannelStoreSparse :
   }
   ChannelT Sum() const {
     ChannelT sum{};
-    for (auto i : bins_) {
-      sum += i.second;
+    for (auto i = bins_.begin(); i != bins_.end(); ++i) {
+      sum += i->second;
     }
     return sum; 
   }
@@ -104,8 +104,8 @@ class ChannelStoreKvStore :
     KvDisconnect(conn_);
   }
   
-  bool Connect(const std::string &locator) { 
-    conn_ = KvConnect(locator.c_str());
+  bool Connect(const std::string &locator, const uint16_t num_nodes) { 
+    conn_ = KvConnect(locator.c_str(), num_nodes);
     return conn_ != NULL;
   }
   void SetName(const std::string &name) { name_ = name; }
@@ -128,8 +128,8 @@ class ChannelStoreKvStore :
   }
   ChannelT Sum() const {
     ChannelT sum{};
-    for (auto i : bins_) {
-      sum += i.second;
+    for (auto i = bins_.begin(); i != bins_.end(); ++i) {
+      sum += i->second;
     }
     return sum; 
   }
