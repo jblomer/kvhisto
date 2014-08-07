@@ -14,10 +14,8 @@ typedef bool int;
 typedef void KV_CONNECTION;
 
 KV_CONNECTION *KvConnect(const char *locator, const uint16_t num_nodes);
-bool KvIncrInt(KV_CONNECTION *conn, const char *hist_name, uint32_t num_adds,
-               uint64_t *bins, uint64_t *values);
-bool KvIncrFloat(KV_CONNECTION *conn, const char *hist_name, uint32_t num_adds,
-                 uint64_t *bins, double *values);               
+bool KvIncr(KV_CONNECTION *conn, const char *hist_name, uint32_t num_adds,
+            uint64_t *bins, int64_t *values_int, double *values_float);
 void KvDisconnect(KV_CONNECTION *conn);
 
 

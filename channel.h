@@ -109,8 +109,39 @@ class ChannelStoreKvStore :
     return conn_ != NULL;
   }
   void SetName(const std::string &name) { name_ = name; }
-  void Commit() {
-    
+  bool Commit() {
+    const uint16_t max_adds = 10240;
+    uint64_t bins[max_adds];
+    int64_t valuesInt[max_adds];
+    double valuesFloat[max_adds];
+    uint16_t num_adds = 0;
+    for (auto i = bins_.begin(); i != bins_.end(); ++i) {
+      bins[num_adds] = i->first;
+      if (std::is_integral<ChannelT>::value) {
+        valuesInt[num_adds] = i->second;
+        valuesFloat[num_adds] = 0.0;
+      } else if (std::is_floating_point<ChannelT>::value) {
+        valuesInt[num_adds] = 0;
+        valuesFloat[num_adds] = i->second;
+      } else {
+        return false;
+      }
+      num_adds++;
+      if (num_adds == max_adds) {
+        bool retval = 
+          KvIncr(conn_, name_.c_str(), num_adds, bins, valuesInt, valuesFloat);
+        if (!retval)
+          return false;
+        num_adds = 0;
+      }
+    }
+    if (num_adds > 0) {
+      bool retval = 
+        KvIncr(conn_, name_.c_str(), num_adds, bins, valuesInt, valuesFloat);
+      if (!retval)
+        return false;
+    }
+    return true;
   }
  protected:
   void AddImpl(const uint64_t index, const ChannelT value) {

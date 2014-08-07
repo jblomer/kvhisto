@@ -33,9 +33,14 @@ int main() {
   retval = channels->Connect("zk:localhost:2181", 1);
   if (!retval)
     abort();
+  channels->SetName("hallihallo");
   
-  for (unsigned i = 0; i < 10000000; ++i)
+  for (unsigned i = 0; i < 100000; ++i)
       h.Fill({prng.Next(100000) + 0.0});
+  
+  printf("Committing to ramcloud\n");
+  retval = channels->Commit();
+  printf(" ... %d\n", retval);
 
   printf("Occupied bins %lu, Histogram sum %u\n", h.occupied(), h.sum());
 
