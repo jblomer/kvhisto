@@ -1,4 +1,4 @@
-
+#include <cassert>
 #include <cstdio>
 #include <inttypes.h>
 #include <string>
@@ -14,9 +14,68 @@
 
 const unsigned kMaxHName = 1024;
 const unsigned kNumNodes = 1;
+const unsigned kBatchSize = 1000;
+
+struct rc_client *client;
+
+void FlushBuffer(std::vector<uint64_t> *tblids,
+                 std::vector<int64_t> *keys, 
+                 std::vector<double> *values)
+{
+  assert((tblids->size() == keys->size()) && (keys->size() == values->size()));
+  const unsigned N = tblids->size();
+  if (N == 0) return;
+  
+  Prng prng;
+  prng.InitLocaltime();
+  uint32_t *shuffled = reinterpret_cast<uint32_t *>
+    (malloc(N * sizeof(uint32_t)));
+  // Init with identity
+  for (unsigned i = 0; i < N; ++i)
+    shuffled[i] = i;
+  // Shuffle (no shuffling for the last element)
+  for (unsigned i = 0; i < N-1; ++i) {
+    const uint32_t swap_idx = i + prng.Next(N - i);
+    uint32_t tmp = shuffled[i];
+    shuffled[i] = shuffled[swap_idx];
+    shuffled[swap_idx]  = tmp;  
+  }
+
+  printf("INCREMENTING %u BINS\n", N);
+  const uint16_t szMultiOpIncrement = rc_multiOpSizeOf(MULTI_OP_INCREMENT);
+  unsigned char *mIncrementObjects = reinterpret_cast<unsigned char *>
+      (malloc(N * szMultiOpIncrement));
+  void **pmIncrementObjects = reinterpret_cast<void **>
+      (malloc(N * sizeof(pmIncrementObjects[0])));
+  for (unsigned i = 0; i < N; ++i) {
+      pmIncrementObjects[i] = mIncrementObjects + (i * szMultiOpIncrement);
+      rc_multiIncrementCreate(tblids->at(shuffled[i]), 
+                              &keys->at(shuffled[i]), sizeof(int64_t),
+                              0, values->at(shuffled[i]), 
+                              NULL, pmIncrementObjects[i]);
+  }
+  rc_multiIncrement(client, pmIncrementObjects, N);
+  
+  free(shuffled);
+  
+  for (unsigned i = 0; i < N; ++i) {
+      Status thisStatus = 
+          rc_multiOpStatus(pmIncrementObjects[i], MULTI_OP_INCREMENT);
+      if (thisStatus != STATUS_OK) {
+        printf("upload failure at %u\n", i);
+        abort();
+      }
+      rc_multiOpDestroy(pmIncrementObjects[i], MULTI_OP_INCREMENT);
+  }
+  free(pmIncrementObjects);
+  free(mIncrementObjects);
+  
+  tblids->clear();
+  keys->clear();
+  values->clear();
+}
 
 int main(int argc, char **argv) {
-  struct rc_client *client;
   Status status;
   const char *locator = "infrc:host=192.168.1.119,port=11100";
   if (argc >= 3)
@@ -27,10 +86,15 @@ int main(int argc, char **argv) {
     abort();
   }
   
-  char *input = argv[1];
+  char mode = argv[1][0];
+  char *input = &(argv[1][1]);
+  printf("Using file %s\n", input);
   int fd_input = open(input, O_RDONLY);
-  
+
   unsigned ntables = 0;
+  std::vector<uint64_t> tblids;
+  std::vector<int64_t> keys;
+  std::vector<double> values;
   while (1) {
     int nbytes;
     uint16_t hname_len;
@@ -39,6 +103,7 @@ int main(int argc, char **argv) {
     nbytes = read(fd_input, &hname_len, sizeof(hname_len));
     if (nbytes <= 0)
       break;
+
     ntables++;
     if (hname_len > kMaxHName) {
       printf("name to long!\n");
@@ -65,21 +130,25 @@ int main(int argc, char **argv) {
     }
     table_name[32] = '\0';
     
-    printf("Creating table %s for histogram %s\n", table_name, name_buf);
-    status = rc_createTable(client, table_name, kNumNodes);
-    if (status != STATUS_OK) {
-      printf("failed creating table\n");
-      abort();
+    if (mode == 'C') {
+      printf("Creating table %s for histogram %s\n", table_name, name_buf);
+      status = rc_createTable(client, table_name, kNumNodes);
+      if (status != STATUS_OK) {
+        printf("failed creating table\n");
+        abort();
+      }
     }
     uint64_t tblid;
-    status = rc_getTableId(client, table_name, &tblid);
-    if (status != STATUS_OK) {
-      printf("failed to get table id\n");
-      abort();
+    if (mode == 'I') {
+      status = rc_getTableId(client, table_name, &tblid);
+      if (status != STATUS_OK) {
+        printf("failed to get table id\n");
+        abort();
+      }
+      printf("Table id for table name %s is %lu (%s)\n", table_name, tblid ,name_buf);
     }
     
-    std::vector<int64_t> keys;
-    std::vector<double> values;
+    unsigned nbins = 0;
     while (1) {
       struct {
         int64_t bin;
@@ -88,116 +157,20 @@ int main(int argc, char **argv) {
       read(fd_input, &item, sizeof(item));
       if (item.bin == -1)
         break;
-      keys.push_back(item.bin);
-      values.push_back(item.value);
+      
+      if (mode == 'I') {
+        tblids.push_back(tblid);
+        keys.push_back(item.bin);
+        values.push_back(item.value);
+      }
+      nbins++;
+      
+      if (keys.size() == kBatchSize) FlushBuffer(&tblids, &keys, &values);
     }
-    continue;
-    if (keys.size() == 0) {
-      printf("empty histogram\n");
-      continue;
-    }
-    
-    printf("incrementing %lu bins\n", keys.size());
-    const uint16_t szMultiOpIncrement = rc_multiOpSizeOf(MULTI_OP_INCREMENT);
-    unsigned char *mIncrementObjects = reinterpret_cast<unsigned char *>
-        (malloc(keys.size() * szMultiOpIncrement));
-    void **pmIncrementObjects = reinterpret_cast<void **>
-        (malloc(keys.size() * sizeof(pmIncrementObjects[0])));
-    for (unsigned i = 0; i < keys.size(); ++i) {
-        pmIncrementObjects[i] = mIncrementObjects + (i * szMultiOpIncrement);
-        rc_multiIncrementCreate(tblid, &keys[i], sizeof(keys[0]),
-                                0, values[i], NULL, pmIncrementObjects[i]);
-    }
-    rc_multiIncrement(client, pmIncrementObjects, keys.size());
-    for (unsigned i = 0; i < keys.size(); ++i) {
-        Status thisStatus = 
-            rc_multiOpStatus(pmIncrementObjects[i], MULTI_OP_INCREMENT);
-        if (thisStatus != STATUS_OK) {
-          printf("upload failure at %u\n", i);
-          abort();
-        }
-        rc_multiOpDestroy(pmIncrementObjects[i], MULTI_OP_INCREMENT);
-    }
-    free(pmIncrementObjects);
-    free(mIncrementObjects);
+    printf("... %u bins\n", nbins);
   }
+  FlushBuffer(&tblids, &keys, &values);
   
   printf("finished reading (%u tables)\n", ntables);
   return 0;
-  
- /*  printf("write %u objects\n", N);
-  val = 0;
-  for (unsigned i = 0; i < N; ++i)
-    ramcloud.write(tblid, &i, sizeof(i), &val, sizeof(val), NULL, NULL);
-  printf("OK\n");
-
-  printf("increment\n");
-  val = 1;
-  for (unsigned i = 0; i < N; ++i) 
-    ramcloud.increment(tblid, &i, sizeof(i), val, NULL, NULL);
-  printf("OK\n");*/
-
-/*  printf("increment multi\n");
-  MultiIncrementObject *multis[M];
-  unsigned keys[M];
-  Prng prng;
-  prng.InitSeed(42);
-  unsigned total = 0;
-  double summand = 1.0;
- 
-  while (total < N) {
-    for (unsigned i = 0; i < M; ++i) {
-      keys[i] = prng.Next(B);
-      multis[i] = new MultiIncrementObject(tblid, &keys[i], sizeof(keys[0]), 0, summand, NULL);
-    }
-    ramcloud.multiIncrement(multis, M);
-    for (unsigned i = 0; i < M; ++i)
-      delete multis[i];
-    total += M;
-    printf("processed %u bins\n", total); 
-  }
-
-  printf("OK\n");
-  return 0;
-*/
-  /*printf("increment async\n");
-  val = 1;
-  IncrementFloatRpc *RPCs[M];
-  unsigned keys[M];
-  Prng prng;
-  prng.InitSeed(42);
-  unsigned total = 0;
-
-  
-
-  while (total < N) {
-    for (unsigned i = 0; i < M; ++i) {
-      keys[i] = prng.Next(100000);
-      RPCs[i] = new IncrementFloatRpc(&ramcloud, tblid, &keys[i], sizeof(unsigned), val, NULL);
-    }
-    for (unsigned i = 0; i < M; ++i) {
- //     try {
-        RPCs[i]->wait();
-*//*      } catch (ClientException& e) {
-        if (e.status == STATUS_OBJECT_DOESNT_EXIST) {
-          RejectRules rrules;
-          memset(&rrules, 0, sizeof(rrules));
-          rrules.exists = 1;
-          try {
-            ramcloud.write(tblid, &keys[i], sizeof(keys[0]), &val, sizeof(val), &rrules, NULL);
-          } catch (ClientException& e) {
-            if (e.status == STATUS_OBJECT_EXISTS)
-              ramcloud.increment(tblid, &keys[i], sizeof(unsigned), val, NULL);
-          }
-        }
-      } */
-//      delete RPCs[i];
-//    }
-//    total += M;
-//  }
-//  printf("OK\n");
-
-  return 0;
 }
-
-
