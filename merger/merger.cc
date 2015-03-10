@@ -208,6 +208,9 @@ int main(int argc, char **argv) {
       if (keys.size() == kBatchSize) {
         FlushBuffer(&logical_tblids, &keys, &values, mode == 'D');
       }
+      if (totalBins % 500000 == 0) {
+        printf(" --- TOTAL: %u bins --- \n", totalBins);
+      }
     }
     printf("... %u bins\n", nbins);
     //if (mode == 'E') {
