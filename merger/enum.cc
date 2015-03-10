@@ -3,8 +3,8 @@
 #include <inttypes.h>
 #include <string>
 
-#include "RamCloud.h"
-#include "TableEnumerator.h"
+#include <ramcloud/RamCloud.h>
+#include <ramcloud/TableEnumerator.h>
 
 const unsigned N = 10000000;
 const unsigned B = 10000000;

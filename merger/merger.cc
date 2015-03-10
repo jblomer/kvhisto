@@ -8,8 +8,9 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+#include <ramcloud/CRamCloud.h>
+
 #include "prng.h"
-#include "CRamCloud.h"
 #include "md5.h"
 
 const unsigned kMaxHName = 1024;
