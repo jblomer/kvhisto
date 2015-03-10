@@ -36,6 +36,7 @@
 #include "Riostream.h"
 
 #include <fcntl.h>
+#include <inttypes.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -50,6 +51,12 @@ Int_t total_bins_sparse;
 Int_t defined_bins_sparse;
 
 int fd_out;
+
+void hadd();
+
+int main() {
+  hadd();
+}
 
 void hadd() {
    // in an interactive ROOT session, edit the file names
