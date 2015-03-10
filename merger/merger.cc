@@ -125,19 +125,19 @@ int main(int argc, char **argv) {
     const char *table_name = argv[2];
     const uint32_t num_nodes = atoi(argv[3]);
     status = rc_getTableId(client, table_name, &global_tblid);
-    if (status != STATUS_TABLE_DOESNT_EXIST) {
-      printf("table %s exists, stop\n", table_name);
-      abort();
-    }
-    status = rc_createTable(client, table_name, num_nodes);
-    if (status != STATUS_OK) {
-      printf("failed creating table %s\n", table_name);
-      abort();
-    }
-    status = rc_getTableId(client, table_name, &global_tblid);
-    if (status != STATUS_OK) {
-      printf("failed getting global table id\n");
-      abort();
+    if (status == STATUS_TABLE_DOESNT_EXIST) {
+      //printf("table %s exists, stop\n", table_name);
+      //abort();
+      status = rc_createTable(client, table_name, num_nodes);
+      if (status != STATUS_OK) {
+        printf("failed creating table %s\n", table_name);
+        abort();
+      }
+      status = rc_getTableId(client, table_name, &global_tblid);
+      if (status != STATUS_OK) {
+        printf("failed getting global table id\n");
+        abort();
+      }
     }
   }
   
