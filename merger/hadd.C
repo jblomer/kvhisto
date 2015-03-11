@@ -52,6 +52,7 @@ Int_t total_bins_sparse;
 Int_t defined_bins_sparse;
 
 int fd_out;
+FILE *fout;
 
 static void Usage() {
   printf("usage: hadd <input path> <output path>\n");
@@ -90,9 +91,13 @@ void hadd(char *input_path, char *output_path) {
      if (retval != 0)
        abort();
    }*/
-   unlink(output_path);
+   //unlink(output_path);
    fd_out = open(output_path, O_WRONLY | O_CREAT);
    if (fd_out < 0) {
+     abort();
+   }
+   fout = fdopen(fd_out, "w");
+   if (!fout) {
      abort();
    }
 
@@ -104,6 +109,8 @@ void hadd(char *input_path, char *output_path) {
    defined_bins_sparse = 0;
 
    MergeRootfile( new TFile(input_path) );
+
+   fclose(fout);
 
    cout << "Total histos: " << total_histos << endl;
    cout << "Total bins: " << total_bins << endl;
@@ -123,13 +130,13 @@ string MkName(const TObject *o) {
 void PPrintName(const TObject *o) {
   string name = MkName(o);
   uint16_t len = name.length();
-  write(fd_out, &len, sizeof(len));
-  write(fd_out, name.data(), len);
+  fwrite(&len, sizeof(len), 1, fout);
+  fwrite(name.data(), len, 1, fout);
 }
 
 void PPrintBin(const int64_t bin, const double value) {
-  write(fd_out, &bin, sizeof(bin));
-  write(fd_out, &value, sizeof(value));
+  fwrite(&bin, sizeof(bin), 1, fout);
+  fwrite(&value, sizeof(value), 1, fout);
 }
 
 void ProcessSparse(const THnBase *h) {
