@@ -92,13 +92,17 @@ void hadd(char *input_path, char *output_path) {
        abort();
    }*/
    //unlink(output_path);
-   fd_out = open(output_path, O_WRONLY | O_CREAT);
-   if (fd_out < 0) {
-     abort();
-   }
-   fout = fdopen(fd_out, "w");
-   if (!fout) {
-     abort();
+   if (output_path[0] == '-') {
+     fout = stdout;
+   } else {
+     fd_out = open(output_path, O_WRONLY | O_CREAT, 0644);
+     if (fd_out < 0) {
+       abort();
+     }
+     fout = fdopen(fd_out, "w");
+     if (!fout) {
+       abort();
+     }
    }
 
    total_histos = 0;
@@ -112,12 +116,12 @@ void hadd(char *input_path, char *output_path) {
 
    fclose(fout);
 
-   cout << "Total histos: " << total_histos << endl;
-   cout << "Total bins: " << total_bins << endl;
-   cout << "Defined bins: " << defined_bins << endl;
-   cout << "Total sparse histos: " << total_histos_sparse << endl;
-   cout << "Total sparse bins: " << total_bins_sparse << endl;
-   cout << "Defined sparse bins: " << defined_bins_sparse << endl;
+   cerr << "Total histos: " << total_histos << endl;
+   cerr << "Total bins: " << total_bins << endl;
+   cerr << "Defined bins: " << defined_bins << endl;
+   cerr << "Total sparse histos: " << total_histos_sparse << endl;
+   cerr << "Total sparse bins: " << total_bins_sparse << endl;
+   cerr << "Defined sparse bins: " << defined_bins_sparse << endl;
 }
 
 string MkName(const TObject *o) {
@@ -152,7 +156,7 @@ void ProcessHisto(const TH1 *h) {
   Int_t ny = h->GetNbinsY();
   Int_t nz = h->GetNbinsZ();
   defined_bins += nx*ny*nz;
-  cout << "    This histogram has bins " << nx << ", " << ny << ", " << nz << endl;
+  cerr << "    This histogram has bins " << nx << ", " << ny << ", " << nz << endl;
   
   PPrintName(h);
 
@@ -188,13 +192,13 @@ void ProcessHisto(const TH1 *h) {
     }
   }
   PPrintBin(-1, 0.0);
-  cout << "      All_sums " << all_sum << endl;
+  cerr << "      All_sums " << all_sum << endl;
 }
 
 void MergeRootfile( TFile *source ) {
    TString path(gDirectory->GetPath());
    source->cd( path );
-   cout << "Browsing " << path << endl;   
+   cerr << "Browsing " << path << endl;   
    
    //gain time, do not add the objects in the list in memory
    TH1::AddDirectory(kFALSE);
@@ -210,35 +214,35 @@ void MergeRootfile( TFile *source ) {
       // read object from first source file
       TObject *obj = key->ReadObj();
 
-      cout << "NAME IS " << obj->GetName() << endl;
+      cerr << "NAME IS " << obj->GetName() << endl;
 
       if ( obj->IsA()->InheritsFrom( TH1::Class() ) ) {
-         cout << "   HELLO, we have the histogram " << obj->GetName() << endl;
+         cerr << "   HELLO, we have the histogram " << obj->GetName() << endl;
          TH1 *h = (TH1*)obj;
          ProcessHisto(h);
       } else if ( obj->IsA()->InheritsFrom( THnBase::Class() )) {
-         cout << "   HELLO-SPARSE " << obj->GetName() << endl;
+         cerr << "   HELLO-SPARSE " << obj->GetName() << endl;
          THnBase *h = (THnBase*)obj;
          ProcessSparse(h);
       } else if ( obj->IsA()->InheritsFrom( TDirectory::Class() ) ) {
          // it's a subdirectory
 
-         //cout << "Found subdirectory " << obj->GetName() << endl;
+         //cerr << "Found subdirectory " << obj->GetName() << endl;
 	 source->cd( path + "/" + obj->GetName() );
          MergeRootfile(source);
          source->cd( path );
       } else if ( obj->IsA()->InheritsFrom( TCollection::Class() )) {
         TCollection *coll = (TCollection *)obj;
-        //cout << "List of something in " << obj->GetName() << endl;
+        //cerr << "List of something in " << obj->GetName() << endl;
         TIter nextelem(coll);
         TObject *elem;
         while ((elem = nextelem())) {
           if (elem->IsA()->InheritsFrom( TH1::Class() )) {
-            cout << "   HELLO, we have the histogram " << elem->GetName() << endl;
+            cerr << "   HELLO, we have the histogram " << elem->GetName() << endl;
             TH1 *h = (TH1 *)elem;
             ProcessHisto(h);
           } else if (elem->IsA()->InheritsFrom( THnBase::Class() )) {
-            cout << "   HELLO-SPARSE " << elem->GetName() << endl;
+            cerr << "   HELLO-SPARSE " << elem->GetName() << endl;
             THnBase *h = (THnBase *)elem;
             ProcessSparse(h);
           }
@@ -246,7 +250,7 @@ void MergeRootfile( TFile *source ) {
       } else {
 	
          // object is of no type that we know or can handle
-         cout << "Unknown object type, name: "
+         cerr << "Unknown object type, name: "
            << obj->GetName() << " title: " << obj->GetTitle() << endl;
       }
       delete obj;

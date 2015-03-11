@@ -109,7 +109,13 @@ int main(int argc, char **argv) {
   char mode = argv[1][0];
   char *input = &(argv[1][1]);
   printf("Using file %s, mode %c\n", input, mode);
-  int fd_input = open(input, O_RDONLY);
+  FILE *fin;
+  if (input[0] == '-') {
+    printf("using stdin\n");
+    fin = stdin;
+  } else {
+    fin = fopen(input, "r");
+  }
   
   if (mode != 'D') {
     Status status;
@@ -150,17 +156,17 @@ int main(int argc, char **argv) {
     int nbytes;
     uint16_t hname_len;
     char name_buf[kMaxHName+1];
-    
-    nbytes = read(fd_input, &hname_len, sizeof(hname_len));
-    if (nbytes <= 0)
+   
+    nbytes = fread(&hname_len, sizeof(hname_len), 1, fin); 
+    if (nbytes == 0)
       break;
 
     ntables++;
     if (hname_len > kMaxHName) {
-      printf("name to long!\n");
+      printf("name too long! (%d)\n", hname_len);
       abort();
     }
-    read(fd_input, name_buf, hname_len);
+    fread(name_buf, hname_len, 1, fin);
     name_buf[hname_len] = '\0';
     
     // Transform into MD5 hash
@@ -193,7 +199,7 @@ int main(int argc, char **argv) {
         int64_t bin;
         double value;
       } item;
-      read(fd_input, &item, sizeof(item));
+      fread(&item, sizeof(item), 1, fin);
       if (item.bin == -1)
         break;
       
