@@ -1,4 +1,4 @@
-all: merger create_table hadd
+all: merger create_table hadd readout
 
 DEBUG = no
 ifeq ($(DEBUG),yes)
@@ -23,6 +23,8 @@ merger: merger.cc prng.h md5.h md5.o
 enum: enum.cc
 	g++ -std=c++0x -pthread -O2 -g -Wall -o enum enum.cc -lramcloud
 
+readout: readout.cc
+	g++ -std=c++0x -pthread -O2 -g -Wall -o readout readout.cc -lramcloud
 
 clean:
 	rm -f *.o *.d
