@@ -35,6 +35,7 @@
 #include "TKey.h"
 #include "Riostream.h"
 
+#include <cstdio>
 #include <fcntl.h>
 #include <inttypes.h>
 #include <unistd.h>
@@ -52,13 +53,21 @@ Int_t defined_bins_sparse;
 
 int fd_out;
 
-void hadd();
-
-int main() {
-  hadd();
+static void Usage() {
+  printf("usage: hadd <input path> <output path>\n");
 }
 
-void hadd() {
+void hadd(char *input_path, char *output_path);
+int main(int argc, char **argv) {
+  if (argc < 3) {
+    Usage();
+    return 1;
+  }
+  hadd(argv[1], argv[2]);
+  return 0;
+}
+
+void hadd(char *input_path, char *output_path) {
    // in an interactive ROOT session, edit the file names
    // Target and FileList, then
    // root > .L hadd.C
@@ -81,8 +90,8 @@ void hadd() {
      if (retval != 0)
        abort();
    }*/
-   unlink("/tmp/HFIFO");
-   fd_out = open("/tmp/HFIFO", O_WRONLY | O_CREAT);
+   unlink(output_path);
+   fd_out = open(output_path, O_WRONLY | O_CREAT);
    if (fd_out < 0) {
      abort();
    }
@@ -94,7 +103,7 @@ void hadd() {
    total_bins_sparse = 0;
    defined_bins_sparse = 0;
 
-   MergeRootfile( new TFile("QAresults_merge.root") );
+   MergeRootfile( new TFile(input_path) );
 
    cout << "Total histos: " << total_histos << endl;
    cout << "Total bins: " << total_bins << endl;
