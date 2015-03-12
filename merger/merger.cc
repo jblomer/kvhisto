@@ -29,15 +29,15 @@ struct JointKey {
 } __attribute__((packed));
 
 void FlushBuffer(std::vector<uint32_t> *logical_tblids,
-                 std::vector<int64_t> *keys, 
+                 std::vector<int64_t> *keys,
                  std::vector<double> *values,
                  const bool dry_run)
 {
-  assert((logical_tblids->size() == keys->size()) && 
+  assert((logical_tblids->size() == keys->size()) &&
          (keys->size() == values->size()));
   const unsigned N = logical_tblids->size();
   if (N == 0) return;
-  
+
   Prng prng;
   prng.InitLocaltime();
   uint32_t *shuffled = reinterpret_cast<uint32_t *>
@@ -50,7 +50,7 @@ void FlushBuffer(std::vector<uint32_t> *logical_tblids,
     const uint32_t swap_idx = i + prng.Next(N - i);
     uint32_t tmp = shuffled[i];
     shuffled[i] = shuffled[swap_idx];
-    shuffled[swap_idx]  = tmp;  
+    shuffled[swap_idx]  = tmp;
   }
 
   printf("INCREMENTING %u BINS\n", N);
@@ -59,25 +59,25 @@ void FlushBuffer(std::vector<uint32_t> *logical_tblids,
   for (unsigned i = 0; i < N; ++i) {
     joint_keys.push_back(JointKey((*logical_tblids)[i], (*keys)[i]));
   }
-  
+
   const uint16_t szMultiOpIncrement = rc_multiOpSizeOf(MULTI_OP_INCREMENT);
   unsigned char *mIncrementObjects = reinterpret_cast<unsigned char *>
       (malloc(N * szMultiOpIncrement));
   void **pmIncrementObjects = reinterpret_cast<void **>
       (malloc(N * sizeof(pmIncrementObjects[0])));
-  
+
   for (unsigned i = 0; i < N; ++i) {
       pmIncrementObjects[i] = mIncrementObjects + (i * szMultiOpIncrement);
-      rc_multiIncrementCreate(global_tblid, 
+      rc_multiIncrementCreate(global_tblid,
                               &joint_keys[shuffled[i]], sizeof(JointKey),
-                              0, (*values)[shuffled[i]], 
+                              0, (*values)[shuffled[i]],
                               NULL, pmIncrementObjects[i]);
   }
   if (!dry_run) {
     rc_multiIncrement(client, pmIncrementObjects, N);
-  
+
     for (unsigned i = 0; i < N; ++i) {
-      Status thisStatus = 
+      Status thisStatus =
         rc_multiOpStatus(pmIncrementObjects[i], MULTI_OP_INCREMENT);
       if (thisStatus != STATUS_OK) {
         printf("upload failure at %u\n", i);
@@ -89,7 +89,7 @@ void FlushBuffer(std::vector<uint32_t> *logical_tblids,
   free(shuffled);
   free(pmIncrementObjects);
   free(mIncrementObjects);
-  
+
   logical_tblids->clear();
   keys->clear();
   values->clear();
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
     Usage(argv[0]);
     return 1;
   }
-  
+
   char mode = argv[1][0];
   char *input = &(argv[1][1]);
   printf("Using file %s, mode %c\n", input, mode);
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
   } else {
     fin = fopen(input, "r");
   }
-  
+
   if (mode != 'D') {
     Status status;
     const char *locator = "infrc:host=192.168.1.119,port=11100";
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
       printf("failed connecting to RAMCloud\n");
       abort();
     }
-  
+
     const char *table_name = argv[2];
     const uint32_t num_nodes = atoi(argv[3]);
     status = rc_getTableId(client, table_name, &global_tblid);
@@ -146,19 +146,20 @@ int main(int argc, char **argv) {
       }
     }
   }
-  
+
   unsigned ntables = 0;
   unsigned nzerotables = 0;
   unsigned totalBins = 0;
   std::vector<uint32_t> logical_tblids;
   std::vector<int64_t> keys;
   std::vector<double> values;
+  double total_sum = 0.0;
   while (1) {
     int nbytes;
     uint16_t hname_len;
     char name_buf[kMaxHName+1];
-   
-    nbytes = fread(&hname_len, sizeof(hname_len), 1, fin); 
+
+    nbytes = fread(&hname_len, sizeof(hname_len), 1, fin);
     if (nbytes == 0)
       break;
 
@@ -169,14 +170,14 @@ int main(int argc, char **argv) {
     }
     fread(name_buf, hname_len, 1, fin);
     name_buf[hname_len] = '\0';
-    
+
     // Transform into MD5 hash
     md5_byte_t digest[16];
     md5_state_t pms;
     md5_init(&pms);
     md5_append(&pms, (const md5_byte_t *)name_buf, hname_len);
     md5_finish(&pms, digest);
-    
+
     char table_name[33];
     for (unsigned i = 0; i < 16; ++i) {
       char dgt1 = (unsigned)digest[i] / 16;
@@ -187,13 +188,13 @@ int main(int argc, char **argv) {
       table_name[i*2+1] = dgt2;
     }
     table_name[32] = '\0';
-    
+
     if (mode == 'I') {
       printf("Merging histogram %s (%s)\n", table_name, name_buf);
     } else if (mode == 'D') {
       printf("Dry-run merging histogram %s (%s)\n", table_name, name_buf);
     }
-    
+
     unsigned nbins = 0;
     while (1) {
       struct {
@@ -203,15 +204,16 @@ int main(int argc, char **argv) {
       fread(&item, sizeof(item), 1, fin);
       if (item.bin == -1)
         break;
-      
+
       if ((mode == 'I') || (mode == 'D')) {
         logical_tblids.push_back(ntables);
         keys.push_back(item.bin);
         values.push_back(item.value);
+        total_sum += item.value;
       }
       nbins++;
       totalBins++;
-      
+
       if (keys.size() == kBatchSize) {
         FlushBuffer(&logical_tblids, &keys, &values, mode == 'D');
       }
@@ -224,11 +226,13 @@ int main(int argc, char **argv) {
       nzerotables++;
     }
     //if (mode == 'E') {
-    //  
+    //
     //}
   }
   FlushBuffer(&logical_tblids, &keys, &values, mode == 'D');
-  
-  printf("finished reading (%u tables (%u zero), %u bins)\n", ntables, nzerotables, totalBins);
+
+  printf("finished reading (%u tables / %u non-empty, %u bins)\n",
+         ntables, ntables-nzerotables, totalBins);
+  printf("Total sum: %lf\n", total_sum);
   return 0;
 }
