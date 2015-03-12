@@ -35,6 +35,7 @@
 #include "TKey.h"
 #include "Riostream.h"
 
+#include <cassert>
 #include <cstdio>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -155,9 +156,12 @@ void ProcessHisto(const TH1 *h) {
   Int_t nx = h->GetNbinsX();
   Int_t ny = h->GetNbinsY();
   Int_t nz = h->GetNbinsZ();
+  assert(nx > 0);
+  assert(ny > 0);
+  assert(nz > 0);
   defined_bins += nx*ny*nz;
   cerr << "    This histogram has bins " << nx << ", " << ny << ", " << nz << endl;
-  
+
   PPrintName(h);
 
   Double_t all_sum = 0.0;
@@ -170,15 +174,15 @@ void ProcessHisto(const TH1 *h) {
             if (this_bin > 0) {
               all_sum += this_bin;
               total_bins++;
-              PPrintBin(nx*ny*z + nx*y + x, this_bin);
+              PPrintBin((nx+1)*(ny+1)*z + (nx+1)*y + x, this_bin);
             }
           }
-        } else { 
+        } else {
           Double_t this_bin = h->GetBinContent(x, y);
           if (this_bin > 0) {
             all_sum += this_bin;
             total_bins++;
-            PPrintBin(nx*y + x, this_bin);
+            PPrintBin((nx+1)*y + x, this_bin);
           }
         }
       }
@@ -198,8 +202,8 @@ void ProcessHisto(const TH1 *h) {
 void MergeRootfile( TFile *source ) {
    TString path(gDirectory->GetPath());
    source->cd( path );
-   cerr << "Browsing " << path << endl;   
-   
+   cerr << "Browsing " << path << endl;
+
    //gain time, do not add the objects in the list in memory
    TH1::AddDirectory(kFALSE);
 
@@ -248,7 +252,7 @@ void MergeRootfile( TFile *source ) {
           }
         }
       } else {
-	
+
          // object is of no type that we know or can handle
          cerr << "Unknown object type, name: "
            << obj->GetName() << " title: " << obj->GetTitle() << endl;
