@@ -46,12 +46,12 @@ void FlushBuffer(std::vector<uint32_t> *logical_tblids,
   for (unsigned i = 0; i < N; ++i)
     shuffled[i] = i;
   // Shuffle (no shuffling for the last element)
-/*  for (unsigned i = 0; i < N-1; ++i) {
+  for (unsigned i = 0; i < N-1; ++i) {
     const uint32_t swap_idx = i + prng.Next(N - i);
     uint32_t tmp = shuffled[i];
     shuffled[i] = shuffled[swap_idx];
     shuffled[swap_idx]  = tmp;
-  }*/
+  }
 
   printf("INCREMENTING %u BINS\n", N);
   std::vector<JointKey> joint_keys;
