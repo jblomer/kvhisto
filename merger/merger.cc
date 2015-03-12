@@ -116,6 +116,7 @@ int main(int argc, char **argv) {
   } else {
     fin = fopen(input, "r");
   }
+  uint32_t num_nodes = 1;
 
   if (mode != 'D') {
     Status status;
@@ -129,7 +130,7 @@ int main(int argc, char **argv) {
     }
 
     const char *table_name = argv[2];
-    const uint32_t num_nodes = atoi(argv[3]);
+    num_nodes = atoi(argv[3]);
     status = rc_getTableId(client, table_name, &global_tblid);
     if (status == STATUS_TABLE_DOESNT_EXIST) {
       //printf("table %s exists, stop\n", table_name);
@@ -233,6 +234,6 @@ int main(int argc, char **argv) {
 
   printf("finished reading (%u tables / %u non-empty, %u bins)\n",
          ntables, ntables-nzerotables, totalBins);
-  printf("Total sum: %lf\n", total_sum);
+  printf("Total sum: %lf\n", total_sum*num_nodes);
   return 0;
 }
