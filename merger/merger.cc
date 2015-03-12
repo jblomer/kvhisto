@@ -18,6 +18,7 @@ const unsigned kBatchSize = 10000;
 
 struct rc_client *client;
 uint64_t global_tblid;
+uint32_t nflushes = 0;
 
 struct JointKey {
   JointKey(const uint32_t logical_tblid, const uint64_t key)
@@ -54,6 +55,7 @@ void FlushBuffer(std::vector<uint32_t> *logical_tblids,
   }
 
   printf("INCREMENTING %u BINS\n", N);
+  nflushes++;
   std::vector<JointKey> joint_keys;
   joint_keys.reserve(N);
   for (unsigned i = 0; i < N; ++i) {
@@ -237,6 +239,6 @@ int main(int argc, char **argv) {
 
   printf("finished reading (%u tables / %u non-empty, %u bins / %u non-empty)\n",
          ntables, ntables-nzerotables, totalBins, totalBins-nzerobins);
-  printf("Total sum: %lf\n", total_sum*num_nodes);
+  printf("Flushes %u, total sum: %lf\n", nflushes, total_sum*num_nodes);
   return 0;
 }
