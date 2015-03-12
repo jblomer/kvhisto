@@ -7,7 +7,8 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
-
+#include <cstring>
+#include <set>
 #include <ramcloud/CRamCloud.h>
 
 struct rc_client *client;
@@ -46,6 +47,7 @@ int main(int argc, char **argv) {
   uint32_t keyLen, dataLen;
   const void *key, *data;
   unsigned nObjects = 0;
+  std::set<uint64_t> tables;
   while (true) {
     keyLen = dataLen = 0;
     key = data = NULL;
@@ -54,6 +56,13 @@ int main(int argc, char **argv) {
     if (key == NULL)
       break;
     nObjects++;
+    uint32_t this_table;
+    memcpy(&this_table, key, sizeof(this_table));
+    //if (this_table != ntable) {
+    //  ntable = this_table;
+    //  printf("Now reading out table %u\n", ntable);
+    //}
+    tables.insert(this_table);
     if (nObjects % 10000 == 0)
       printf("received another 10000 objects\n"); 
     if (nObjects % 1000000 == 0)
@@ -61,7 +70,7 @@ int main(int argc, char **argv) {
   }
   rc_enumerateTableFinalize(enumState);  
 
-  printf("Received %u objects\n", nObjects);
+  printf("Received %u objects (%u tables)\n", nObjects, tables.size());
 
   return 0;
 }

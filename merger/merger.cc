@@ -148,6 +148,7 @@ int main(int argc, char **argv) {
   }
   
   unsigned ntables = 0;
+  unsigned nzerotables = 0;
   unsigned totalBins = 0;
   std::vector<uint32_t> logical_tblids;
   std::vector<int64_t> keys;
@@ -219,12 +220,15 @@ int main(int argc, char **argv) {
       }
     }
     printf("... %u bins\n", nbins);
+    if (nbins == 0) {
+      nzerotables++;
+    }
     //if (mode == 'E') {
     //  
     //}
   }
   FlushBuffer(&logical_tblids, &keys, &values, mode == 'D');
   
-  printf("finished reading (%u tables, %u bins)\n", ntables, totalBins);
+  printf("finished reading (%u tables (%u zero), %u bins)\n", ntables, nzerotables, totalBins);
   return 0;
 }
