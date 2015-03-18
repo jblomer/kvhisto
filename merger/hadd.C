@@ -142,6 +142,12 @@ void PPrintName(const TObject *o) {
 void PPrintBin(const int64_t bin, const double value) {
   fwrite(&bin, sizeof(bin), 1, fout);
   fwrite(&value, sizeof(value), 1, fout);
+  if (bin == -1)
+    return;
+  int64_t errbin = -32-bin;
+  double errval = value*value;
+  fwrite(&errbin, sizeof(errbin), 1, fout);
+  fwrite(&errval, sizeof(errval), 1, fout);
 }
 
 void ProcessSparse(const THnBase *h) {
