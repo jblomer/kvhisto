@@ -56,20 +56,20 @@ int fd_out;
 FILE *fout;
 
 static void Usage() {
-  printf("usage: hadd <input path> <output path>\n");
+  printf("usage: hbins <input path> <output path>\n");
 }
 
-void hadd(char *input_path, char *output_path);
+void hbins(char *input_path, char *output_path);
 int main(int argc, char **argv) {
   if (argc < 3) {
     Usage();
     return 1;
   }
-  hadd(argv[1], argv[2]);
+  hbins(argv[1], argv[2]);
   return 0;
 }
 
-void hadd(char *input_path, char *output_path) {
+void hbins(char *input_path, char *output_path) {
    // in an interactive ROOT session, edit the file names
    // Target and FileList, then
    // root > .L hadd.C
@@ -141,13 +141,17 @@ void PPrintName(const TObject *o) {
 
 void PPrintBin(const int64_t bin, const double value) {
   fwrite(&bin, sizeof(bin), 1, fout);
-  fwrite(&value, sizeof(value), 1, fout);
   if (bin == -1)
     return;
-  //int64_t errbin = -32-bin;
-  //double errval = value*value;
-  //fwrite(&errbin, sizeof(errbin), 1, fout);
-  //fwrite(&errval, sizeof(errval), 1, fout);
+  int64_t errbin = -32-bin;
+  fwrite(&errbin, sizeof(errbin), 1, fout);
+  /*fwrite(&value, sizeof(value), 1, fout);
+  if (bin == -1)
+    return;
+  int64_t errbin = -32-bin;
+  double errval = value*value;
+  fwrite(&errbin, sizeof(errbin), 1, fout);
+  fwrite(&errval, sizeof(errval), 1, fout);*/
 }
 
 void ProcessSparse(const THnBase *h) {

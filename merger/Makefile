@@ -1,4 +1,4 @@
-all: merger create_table hadd readout
+all: merger create_table hadd hbins readout readout_multi
 
 DEBUG = no
 ifeq ($(DEBUG),yes)
@@ -14,6 +14,9 @@ md5.o: md5.c
 hadd: hadd.C
 	g++ -O2 $(ROOT_INCLUDES) $(ROOT_LIBS) -o hadd hadd.C 
 
+hbins: hbins.C
+	g++ -O2 $(ROOT_INCLUDES) $(ROOT_LIBS) -o hbins hbins.C
+
 create_table: create_table.cc
 	g++ -std=c++0x -pthread -O2 -g -Wall -o create_table create_table.cc -lramcloud
 
@@ -25,6 +28,9 @@ enum: enum.cc
 
 readout: readout.cc
 	g++ -std=c++0x -pthread -O2 -g -Wall -o readout readout.cc -lramcloud
+
+readout_multi: readout_multi.cc md5.h md5.o
+	g++ -std=c++0x -pthread -O2 -g -Wall -o readout_multi readout_multi.cc md5.o -lramcloud
 
 clean:
 	rm -f *.o *.d
